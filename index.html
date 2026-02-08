@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Kalender Cinta</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Layer animasi hati & sparkle -->
+  <div id="heartLayer" class="heart-layer"></div>
+  <div id="sparkleLayer" class="sparkle-layer"></div>
+
+  <!-- Floating Login Button -->
+  <button id="loginBtn" class="floating-login-btn" title="Login Admin">🔐 Login</button>
+  
+  <!-- Mode Indicator -->
+  <div id="modeIndicator" class="mode-indicator view-mode">👁️ View Mode</div>
+
+  <div class="wrapper">
+    <div class="calendar-section">
+      <div class="top-bar">
+        <div class="title-group">
+          <h2>Love Calender</h2>
+          <span>Setiap hari selalu ada alasan baru buat makin cinta 💘</span>
+        </div>
+
+        <div class="month-nav">
+          <button class="nav-btn" id="prevBtn">
+            <span>⟵</span> Prev
+          </button>
+          <div class="month-display" id="monthDisplay"></div>
+          <button class="nav-btn" id="nextBtn">
+            Next <span>⟶</span>
+          </button>
+        </div>
+
+        <button class="our-journey-btn" id="ourJourneyBtn">Our Journey 💕</button>
+      </div>
+
+      <div class="weekday-row">
+        <div class="weekday weekend">Min</div>
+        <div class="weekday">Sen</div>
+        <div class="weekday">Sel</div>
+        <div class="weekday">Rab</div>
+        <div class="weekday">Kam</div>
+        <div class="weekday">Jum</div>
+        <div class="weekday weekend">Sab</div>
+      </div>
+
+      <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+  </div>
+
+  <!-- 🌸 MODAL MOMENT FEED -->
+  <div id="noteModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalDateTitle">Momen</h3>
+        <button id="closeModal" type="button" class="close-btn">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Feed momen per tanggal -->
+        <div id="postsContainer" class="posts-container"></div>
+
+        <!-- Tombol add moment di feed -->
+        <button id="addMomentBtn" type="button" class="add-moment-btn">
+          + Add Moment
+        </button>
+
+        <!-- Panel create / edit post -->
+        <div id="createPanel" class="create-panel hidden">
+          <input
+            id="postTitle"
+            type="text"
+            class="title-input"
+            placeholder="Judul momen"
+          />
+          <input
+            id="postLovedBy"
+            type="text"
+            class="title-input"
+            placeholder="Loved by"
+          />
+
+          
+          <div class="editor-toolbar" id="editorToolbar">
+            <button type="button" onclick="formatText('bold')"><b>B</b></button>
+            <button type="button" onclick="formatText('italic')"><i>I</i></button>
+            <button type="button" onclick="formatText('underline')"><u>U</u></button>
+
+            <select id="fontSizeSelect" class="toolbar-select" onchange="applyFontSize()">
+              <option value="12px">12</option>
+              <option value="14px" selected>14</option>
+              <option value="16px">16</option>
+              <option value="18px">18</option>
+              <option value="20px">20</option>
+              <option value="custom">Custom…</option>
+            </select>
+
+            <div class="color-palette" title="Warna teks">
+              <button type="button" class="color-btn" data-color="#4a1f3b" aria-label="Default"></button>
+              <button type="button" class="color-btn" data-color="#ff4f7c" aria-label="Pink"></button>
+              <button type="button" class="color-btn" data-color="#e11d48" aria-label="Red"></button>
+              <button type="button" class="color-btn" data-color="#8b5cf6" aria-label="Purple"></button>
+              <button type="button" class="color-btn" data-color="#1d4ed8" aria-label="Blue"></button>
+              <button type="button" class="color-btn" data-color="#000000" aria-label="Black"></button>
+            </div>
+
+            <button type="button" onclick="toggleEmojiPicker()">😊</button>
+            <button type="button" onclick="insertImage()">📷</button>
+            <button type="button" onclick="clearEditor()">🧹</button>
+          </div>
+
+
+          <div id="emojiPicker" class="emoji-picker hidden">
+            <button type="button" onclick="insertEmoji('💕')">💕</button>
+            <button type="button" onclick="insertEmoji('💗')">💗</button>
+            <button type="button" onclick="insertEmoji('💞')">💞</button>
+            <button type="button" onclick="insertEmoji('💘')">💘</button>
+            <button type="button" onclick="insertEmoji('💌')">💌</button>
+            <button type="button" onclick="insertEmoji('🥹')">🥹</button>
+          </div>
+
+          <div id="editor" class="editor" contenteditable="true"></div>
+
+          <input type="file" id="imageInput" accept="image/*" hidden multiple />
+
+          <div class="create-footer">
+            <button id="cancelCreate" type="button" class="ghost-btn">
+              Batal
+            </button>
+            <button id="postBtn" type="button" class="save-btn">
+              Post
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- Mini modal view-only untuk judul momen -->
+  <div id="miniModal" class="mini-modal hidden">
+    <div class="mini-card">
+      <div class="mini-header">
+        <h4 id="miniTitle"></h4>
+        <button id="miniClose" type="button" class="close-btn mini-close">✕</button>
+      </div>
+      <div id="miniMeta" class="mini-meta"></div>
+      <div id="miniContent" class="mini-content"></div>
+      <div class="mini-footer">
+        <button id="miniEdit" type="button" class="ghost-btn mini-action">Edit</button>
+        <button id="miniDelete" type="button" class="save-btn mini-action">Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Our Journey -->
+  <div id="ourJourneyModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Our Journey</h3>
+        <button id="closeOurJourneyModal" type="button" class="close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="ourJourneyContent" class="our-journey-content">
+          <!-- Content will be populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal hidden">
+    <div class="modal-content login-modal-content">
+      <div class="modal-header">
+        <h3>🔐 Admin Login</h3>
+        <button id="closeLoginModal" type="button" class="close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="login-form">
+          <input 
+            id="loginPassword" 
+            type="password" 
+            class="title-input" 
+            placeholder="Enter admin password"
+            autocomplete="off"
+          />
+          <div class="login-buttons">
+            <button id="cancelLogin" type="button" class="ghost-btn">Cancel</button>
+            <button id="submitLogin" type="button" class="save-btn">Login</button>
+          </div>
+          <p id="loginError" class="login-error hidden">❌ Wrong password!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="script.js"></script>
+</body>
+</html>

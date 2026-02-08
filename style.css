@@ -1,0 +1,1644 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(
+    circle at top,
+    #ffe4f2 0,
+    #f9d3ec 30%,
+    #f5c4e6 60%,
+    #f0b4e0 100%
+  );
+  color: #4a1f3b;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Layer animasi */
+.heart-layer,
+.sparkle-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.wrapper {
+  position: relative;
+  background: rgba(255, 255, 255, 0.96);
+  color: #4a1f3b;
+  padding: 32px 40px;
+  border-radius: 24px;
+  max-width: 1000px;
+  width: 95%;
+  box-shadow:
+    0 24px 50px rgba(191, 64, 128, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+  z-index: 1;
+  animation: wrapperGlow 5s ease-in-out infinite alternate;
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+.calendar-section {
+  flex: 1;
+}
+
+.journey-sidebar {
+  width: 250px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow:
+    0 10px 30px rgba(191, 64, 128, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 180, 210, 0.3);
+}
+
+.journey-sidebar h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #4a1f3b;
+  margin-bottom: 16px;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+.journey-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.journey-item {
+  background: rgba(255, 240, 246, 0.8);
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #6a264a;
+  text-align: center;
+  border: 1px solid rgba(255, 200, 220, 0.4);
+  transition: all 0.2s ease;
+}
+
+.journey-item:hover {
+  background: rgba(255, 220, 240, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 150, 180, 0.3);
+}
+
+/* Heart glow di sudut */
+.wrapper::before,
+.wrapper::after {
+  content: "♥";
+  position: absolute;
+  font-size: 80px;
+  color: rgba(255, 192, 218, 0.35);
+  pointer-events: none;
+}
+
+.wrapper::before {
+  top: -24px;
+  right: 40px;
+}
+
+.wrapper::after {
+  bottom: -10px;
+  left: 30px;
+  transform: rotate(-10deg);
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+  flex-wrap: wrap;
+}
+
+.our-journey-btn {
+  margin-left: auto;
+}
+
+.title-group h2 {
+  font-size: 24px;
+  margin-bottom: 4px;
+  letter-spacing: 0.03em;
+}
+
+.title-group span {
+  font-size: 12px;
+  color: #9b587f;
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-direction: row;
+}
+
+.month-display {
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 700px) {
+  .month-nav {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+  
+  .month-display {
+    order: -1;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    width: 100%;
+  }
+  
+  .month-nav button.nav-btn {
+    flex: 1;
+    max-width: 120px;
+    justify-content: center;
+  }
+}
+
+button.nav-btn {
+  border: none;
+  padding: 6px 13px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff7fa8, #ffb3c8);
+  color: #4a1f3b;
+  font-size: 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  box-shadow: 0 4px 0 rgba(212, 96, 142, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+button.nav-btn span {
+  font-size: 13px;
+}
+
+button.nav-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.9),
+    transparent
+  );
+  transform: skewX(-20deg);
+  opacity: 0;
+}
+
+button.nav-btn:hover::after {
+  animation: buttonShine 0.8s ease-out;
+}
+
+button.nav-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 0 rgba(212, 96, 142, 0.5);
+}
+
+.weekday-row,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  column-gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.weekday-row {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #b17696;
+}
+
+.weekday {
+  text-align: left;
+  padding: 4px 6px;
+}
+
+.weekday.weekend {
+  color: #ff4f7c;
+  font-weight: 600;
+}
+
+.calendar-grid {
+  row-gap: 10px;
+}
+
+/* Day cards */
+.day-card {
+  border-radius: 12px;
+  background: radial-gradient(circle at top left, #ffe9f3, #ffb5cf);
+  color: #4a1f3b;
+  aspect-ratio: 1;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  box-shadow: 0 10px 18px rgba(205, 76, 134, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+  position: relative;
+  font-size: 14px;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.day-card::after {
+  content: "";
+  position: absolute;
+  bottom: 8px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  opacity: 0.8;
+}
+
+.day-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 20px rgba(205, 76, 134, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.9);
+  background: radial-gradient(circle at top left, #ffeef6, #ffc3d9);
+}
+
+.day-number {
+  font-size: 22px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.day-name {
+  font-size: 10px;
+  text-transform: capitalize;
+  color: #7e3f63;
+}
+
+.day-tag {
+  margin-top: 2px;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* monthsary: semua tanggal 19 */
+.day-card.monthsary {
+  box-shadow:
+    0 12px 22px rgba(210, 87, 139, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.9);
+  animation: monthsaryPulse 2.6s ease-in-out infinite;
+}
+
+.day-tag--monthsary {
+  color: #d94a80;
+}
+
+/* Anniversary effect */
+.day-card.anniversary {
+  background: linear-gradient(135deg, #ffe6f5, #ff9acb, #ff6fa7);
+  outline: none !important;
+  box-shadow:
+    0 16px 30px rgba(187, 40, 102, 0.85),
+    0 0 0 1px rgba(255, 255, 255, 0.95),
+    0 0 25px rgba(255, 70, 130, 0.9);
+  position: relative;
+  overflow: hidden;
+  animation: anniversaryGlow 2.4s ease-in-out infinite;
+}
+
+.day-card.anniversary::before {
+  content: "♥";
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 6px rgba(255, 71, 126, 0.8);
+}
+
+/* Hapus dot kuning di anniversary */
+.day-card.anniversary::after { display:none !important; }
+
+.day-tag--anniversary {
+  background: linear-gradient(135deg, #ff4f7c, #ff9acb);
+  color: #fff8fc;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* weekend card (Minggu + Sabtu) */
+.day-card.weekend {
+  outline: 1px solid rgba(255, 95, 131, 0.8);
+}
+
+/* Hari ini */
+.day-card.today {
+  background: radial-gradient(circle at top left, #ffeef6, #ffd0e4);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.9),
+    0 0 0 2px rgba(255, 158, 195, 0.9),
+    0 12px 24px rgba(197, 78, 131, 0.55);
+}
+
+.day-card.today::after {
+  background: #ff3b76;
+}
+
+/* sel kosong */
+.day-card.empty {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  pointer-events: none;
+}
+
+/* Floating HEARTS */
+.heart {
+  position: absolute;
+  color: rgba(255, 105, 155, 0.9);
+  text-shadow:
+    0 0 6px rgba(255, 150, 190, 0.9),
+    0 0 12px rgba(255, 80, 140, 0.9);
+  animation: heartFloat linear forwards;
+  will-change: transform, opacity;
+}
+
+/* Sparkles */
+.sparkle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff, rgba(255, 255, 255, 0));
+  box-shadow:
+    0 0 6px rgba(255, 255, 255, 0.9),
+    0 0 14px rgba(255, 200, 250, 0.9);
+  animation: sparkleFloat linear forwards;
+  will-change: transform, opacity;
+}
+
+/* ANIMATIONS */
+@keyframes heartFloat {
+  0% {
+    transform: translateY(0) scale(0.8);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-140vh) scale(1.15);
+    opacity: 0;
+  }
+}
+
+@keyframes sparkleFloat {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-120vh) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes wrapperGlow {
+  0% {
+    box-shadow:
+      0 24px 50px rgba(191, 64, 128, 0.35),
+      0 0 0 1px rgba(255, 255, 255, 0.8);
+  }
+  50% {
+    box-shadow:
+      0 28px 60px rgba(191, 64, 128, 0.55),
+      0 0 25px rgba(255, 175, 215, 0.7);
+  }
+  100% {
+    box-shadow:
+      0 24px 50px rgba(191, 64, 128, 0.35),
+      0 0 0 1px rgba(255, 255, 255, 0.8);
+  }
+}
+
+@keyframes buttonShine {
+  0% {
+    left: -40%;
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    left: 110%;
+    opacity: 0;
+  }
+}
+
+@keyframes anniversaryGlow {
+  0% {
+    transform: translateY(0) scale(1);
+    box-shadow:
+      0 10px 20px rgba(187, 40, 102, 0.55),
+      0 0 0 1px rgba(255, 255, 255, 0.9),
+      0 0 16px rgba(255, 90, 140, 0.7);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow:
+      0 18px 32px rgba(187, 40, 102, 0.9),
+      0 0 0 2px rgba(255, 174, 204, 0.95),
+      0 0 26px rgba(255, 110, 160, 0.95);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow:
+      0 10px 20px rgba(187, 40, 102, 0.55),
+      0 0 0 1px rgba(255, 255, 255, 0.9),
+      0 0 16px rgba(255, 90, 140, 0.7);
+  }
+}
+
+@keyframes monthsaryPulse {
+  0% {
+    transform: translateY(0) scale(1);
+    box-shadow:
+      0 12px 22px rgba(210, 87, 139, 0.45),
+      0 0 0 1px rgba(255, 255, 255, 0.9);
+  }
+  50% {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow:
+      0 16px 26px rgba(210, 87, 139, 0.65),
+      0 0 0 1px rgba(255, 220, 240, 0.95);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow:
+      0 12px 22px rgba(210, 87, 139, 0.45),
+      0 0 0 1px rgba(255, 255, 255, 0.9);
+  }
+}
+
+
+/* ===== MINI MODAL TITLE VIEW (Opsi A) ===== */
+.mini-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.mini-modal.hidden {
+  display: none;
+}
+
+.mini-card {
+  background: radial-gradient(circle at top, rgba(255,234,244,0.98), rgba(255,208,234,0.96));
+  border-radius: 20px;
+  padding: 14px 16px 12px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow:
+    0 14px 34px rgba(255, 110, 160, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  position: relative;
+  overflow: hidden;
+}
+
+.mini-card::before,
+.mini-card::after {
+  content: "♥";
+  position: absolute;
+  font-size: 52px;
+  color: rgba(255, 192, 218, 0.35);
+  pointer-events: none;
+}
+
+.mini-card::before {
+  top: -16px;
+  right: 8px;
+}
+
+.mini-card::after {
+  bottom: -18px;
+  left: 10px;
+}
+
+.mini-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.mini-header h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #6a264a;
+}
+
+.mini-close {
+  font-size: 16px;
+}
+
+.mini-meta {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #b17093;
+  position: relative;
+  z-index: 1;
+}
+
+.mini-content {
+  margin-top: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+  font-size: 13px;
+  color: #5a2341;
+  position: relative;
+  z-index: 1;
+}
+
+.mini-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 6px 0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.mini-footer {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.mini-action {
+  font-size: 12px;
+  padding-inline: 12px;
+}
+
+/* Toolbar selects */
+.toolbar-select {
+  padding: 3px 6px;
+  border-radius: 8px;
+  border: 1px solid #d8a7c3;
+  background: rgba(255, 234, 247, 0.95);
+  font-size: 11px;
+  color: #7b345b;
+  outline: none;
+}
+.toolbar-select:focus {
+  box-shadow: 0 0 0 1px rgba(255, 140, 180, 0.8);
+  border-color: #ff8ab7;
+}
+/* ===== MODAL & FEED ===== */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 1;
+  transition: 0.3s ease;
+}
+
+.modal.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-content {
+  position: relative;
+  width: 90%;
+  max-width: 560px;
+  background: radial-gradient(circle at top, #ffeaf4 0, #ffd0ea 45%, #ffc1de);
+  border-radius: 22px;
+  padding: 18px 20px 18px;
+  box-shadow:
+    0 14px 40px rgba(255, 96, 160, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.9);
+  animation: popIn 0.3s ease-out;
+  overflow: hidden;
+}
+
+.modal-content::before,
+.modal-content::after {
+  content: "♥";
+  position: absolute;
+  font-size: 60px;
+  color: rgba(255, 192, 218, 0.35);
+  pointer-events: none;
+}
+
+.modal-content::before {
+  top: -20px;
+  right: -5px;
+}
+
+.modal-content::after {
+  bottom: -20px;
+  left: 5px;
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.9) translateY(15px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.modal-header h3 {
+  font-size: 18px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.modal-body {
+  margin-top: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Feed container */
+.posts-container {
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-bottom: 10px;
+}
+
+.posts-container.hidden {
+  display: none;
+}
+
+.posts-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.posts-container::-webkit-scrollbar-thumb {
+  background: rgba(190, 95, 140, 0.45);
+  border-radius: 999px;
+}
+
+.no-posts {
+  font-size: 13px;
+  color: #b4688e;
+  text-align: center;
+  padding: 12px 4px;
+}
+
+/* Fancy romantic post cards */
+.post-card {
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 16px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  box-shadow:
+    0 10px 22px rgba(210, 95, 145, 0.35),
+    0 0 0 1px rgba(255, 220, 240, 0.9);
+  position: relative;
+  overflow: hidden;
+}
+
+.post-card::before {
+  content: "♥";
+  position: absolute;
+  top: -10px;
+  right: 8px;
+  font-size: 24px;
+  color: rgba(255, 170, 210, 0.35);
+}
+
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.post-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #6a264a;
+}
+
+.post-meta {
+  font-size: 11px;
+  color: #b17093;
+  margin-top: 2px;
+}
+
+
+.post-sync-indicator {
+  font-size: 10px;
+  color: #b17093;
+  margin-left: 4px;
+  opacity: 0.9;
+}
+.post-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.post-delete,
+.post-edit {
+  border: none;
+  background: rgba(255, 190, 215, 0.9);
+  border-radius: 999px;
+  padding: 3px 7px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.post-content-wrapper {
+  margin-top: 6px;
+}
+
+.post-content {
+  font-size: 13px;
+  color: #5a2341;
+}
+
+.post-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 6px 0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* collapse */
+.post-content.collapsed {
+  max-height: 150px;
+  overflow: hidden;
+  position: relative;
+}
+
+.post-content.collapsed::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0),
+    rgba(255, 245, 250, 0.95)
+  );
+}
+
+.toggle-post {
+  margin-top: 4px;
+  background: transparent;
+  border: none;
+  color: #b44678;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.toggle-post.hidden {
+  display: none;
+}
+
+/* Add moment button (feed) */
+.add-moment-btn {
+  width: 100%;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px dashed rgba(184, 70, 120, 0.7);
+  background: rgba(255, 240, 246, 0.95);
+  cursor: pointer;
+  font-size: 13px;
+  color: #b44678;
+}
+
+.add-moment-btn.hidden {
+  display: none;
+}
+
+/* Create panel (form post) */
+.create-panel {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 205, 230, 0.9);
+}
+
+.create-panel.hidden {
+  display: none;
+}
+
+.title-input {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #ffb8d4;
+  padding: 7px 9px;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.editor-toolbar {
+  margin-top: 4px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.editor-toolbar button {
+  border: none;
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: rgba(255, 181, 207, 0.9);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.editor-toolbar input[type="color"] {
+  width: 32px;
+  height: 30px;
+  padding: 0;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.emoji-picker {
+  margin-top: 4px;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 4px 6px;
+  border: 1px solid #ffb6d3;
+}
+
+.emoji-picker.hidden {
+  display: none;
+}
+
+.emoji-picker button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.editor {
+  margin-top: 8px;
+  min-height: 160px;
+  max-height: 260px;
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #ffb8d4;
+  overflow-y: auto;
+  font-size: 13px;
+}
+
+.editor.empty {
+  color: #c68aaa;
+}
+
+.editor img {
+  max-width: 100%;
+  display: inline-block;
+  height: auto;
+  display: block;
+  margin: 6px 0;
+  resize: both;
+  overflow: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* footer tombol post */
+.create-footer {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.save-btn {
+  padding: 8px 14px;
+  background: #ff76a3;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 13px;
+  min-width: 80px;
+}
+
+.ghost-btn {
+  padding: 8px 14px;
+  background: transparent;
+  color: #b64d7f;
+  border-radius: 12px;
+  border: 1px solid rgba(182, 77, 127, 0.4);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+/* PIN ICON BEAUTY */
+.post-pin {
+  font-size: 18px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s, filter 0.2s;
+}
+
+.post-pin:hover {
+  transform: scale(1.25);
+  filter: drop-shadow(0 0 6px rgba(255, 100, 150, 0.8));
+}
+
+/* Tanggal yang punya momen */
+.day-card.has-moment::after {
+  background: #ffc857;
+  box-shadow: 0 0 6px rgba(255, 200, 87, 0.9);
+}
+
+/* Palette warna preset di toolbar */
+.color-palette {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.color-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(184, 70, 120, 0.5);
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+}
+
+.color-btn[data-color="#4a1f3b"] { background: #4a1f3b; }
+.color-btn[data-color="#ff4f7c"] { background: #ff4f7c; }
+.color-btn[data-color="#e11d48"] { background: #e11d48; }
+.color-btn[data-color="#8b5cf6"] { background: #8b5cf6; }
+.color-btn[data-color="#1d4ed8"] { background: #1d4ed8; }
+.color-btn[data-color="#000000"] { background: #000000; }
+
+.color-btn:focus-visible {
+  outline: 2px solid #ff8ab7;
+  outline-offset: 1px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 700px) {
+  .wrapper {
+    padding: 24px 16px;
+    border-radius: 20px;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .calendar-section {
+    width: 100%;
+  }
+
+  .journey-sidebar {
+    width: 100%;
+    order: 2;
+  }
+
+  .weekday-row,
+  .calendar-grid {
+    grid-template-columns: repeat(7, minmax(40px, 1fr));
+  }
+
+  .day-card {
+    min-height: 72px;
+    padding: 8px 8px;
+  }
+
+  .day-number {
+    font-size: 20px;
+  }
+
+  .day-name {
+    font-size: 10px;
+  }
+
+  .month-display {
+    font-size: 12px;
+  }
+
+  .modal-content {
+    padding: 14px 14px 14px;
+  }
+}
+
+.day-card.weekend.monthsary, .day-card.weekend.anniversary { outline:none !important; }
+
+
+
+/* === PATCH: Soft romantic borders === */
+.title-input,
+.editor {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 180, 210, 0.55);
+  transition: 0.2s ease;
+}
+.title-input:focus,
+.editor:focus {
+  outline: none !important;
+  border-color: rgba(255, 120, 170, 0.7);
+  box-shadow:
+    0 0 0 2px rgba(255, 170, 210, 0.5),
+    0 4px 10px rgba(255, 160, 200, 0.35);
+}
+.modal-content,
+.mini-card {
+  border: 1px solid rgba(255, 200, 220, 0.55) !important;
+  box-shadow:
+    0 18px 40px rgba(255, 130, 170, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.8) !important;
+}
+*:focus {
+  outline: none !important;
+}
+
+
+/* === PATCH v9: Hearts center + animated border trace for days with moments === */
+
+/* Center hearts */
+.day-card.anniversary::before,
+.day-card.monthsary::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.day-card.anniversary::before {
+  content: "❤️";
+  font-size: 30px;
+  color: #ff4f7c;
+  text-shadow:
+    0 0 8px rgba(255,100,150,0.9),
+    0 0 18px rgba(255,130,180,0.95);
+}
+
+.day-card.monthsary::before {
+  content: "💕";
+  font-size: 28px;
+  color: #ff7fb2;
+  text-shadow:
+    0 0 6px rgba(255,150,200,0.9),
+    0 0 16px rgba(255,180,215,0.95);
+}
+
+/* Prepare card for trace */
+.day-card {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Override old note icon for days with moments:
+   LED-style border tracer that follows border line */
+.day-card.has-moment::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 290deg,
+    rgba(255,120,170,1) 320deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+
+  mask-composite: exclude;
+  animation: borderTracer 4s linear infinite;
+  pointer-events: none;
+} 
+
+/* smooth clockwise spin */
+@keyframes borderTracer {
+  to { transform: rotate(360deg); }
+}
+
+/* mobile tweaks: square dates & hide day-name text */
+@media (max-width: 700px) {
+  .day-card {
+    border-radius: 8px !important;
+    aspect-ratio: 1 !important;
+    padding: 4px 5px !important;
+  }
+  .day-card.anniversary,
+  .day-card.monthsary {
+    border-radius: 8px !important;
+  }
+  .day-number {
+    font-size: 14px !important;
+  }
+  .day-name {
+    display: none !important;
+  }
+  .day-tag {
+    font-size: 8px !important;
+    padding: 1px 4px !important;
+  }
+  .calendar-grid {
+    grid-template-columns: repeat(7, 1fr) !important;
+    column-gap: 4px !important;
+    row-gap: 4px !important;
+  }
+  .weekday-row {
+    column-gap: 4px !important;
+  }
+  .weekday {
+    font-size: 10px !important;
+    padding: 2px 4px !important;
+    text-align: center !important;
+  }
+}
+
+
+/* === PATCH v10: Simple LED border trace hugging the border === */
+
+/* make sure day-card can host the pseudo */
+.day-card {
+  position: relative;
+  overflow: hidden;
+}
+
+/* override all previous has-moment pseudo styles */
+.day-card.has-moment::before,
+.day-card.has-moment::after {
+  box-shadow: none !important;
+}
+
+/* Animated border trace - glowing border that circles the box */
+.day-card.has-moment {
+  position: relative;
+  outline: 2px solid rgba(255, 120, 170, 0.8);
+  outline-offset: 2px;
+  animation: borderPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes borderPulse {
+  0%, 100% {
+    outline-color: rgba(255, 120, 170, 0.6);
+    outline-offset: 2px;
+    box-shadow: 0 0 8px rgba(255, 120, 170, 0.4);
+  }
+  50% {
+    outline-color: rgba(255, 120, 170, 1);
+    outline-offset: 3px;
+    box-shadow: 0 0 16px rgba(255, 120, 170, 0.8);
+  }
+}
+
+/* keep hearts center on special days */
+.day-card.anniversary::before,
+.day-card.monthsary::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Spin clockwise */
+@keyframes ledTraceSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Our Journey Button */
+.our-journey-btn {
+  background: linear-gradient(135deg, #ff7fa8, #ffb3c8);
+  color: #4a1f3b;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(212, 96, 142, 0.5);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.our-journey-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 rgba(212, 96, 142, 0.5);
+  background: linear-gradient(135deg, #ff9cb8, #ffcdd8);
+}
+
+.our-journey-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 0 rgba(212, 96, 142, 0.5);
+}
+
+.our-journey-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.9),
+    transparent
+  );
+  transform: skewX(-20deg);
+  opacity: 0;
+}
+
+.our-journey-btn:hover::after {
+  animation: buttonShine 0.8s ease-out;
+}
+
+/* Our Journey Modal Content */
+.our-journey-content {
+  padding: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* ===== FLOATING LOGIN BUTTON ===== */
+.floating-login-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: linear-gradient(135deg, #ff7fa8, #ffb3c8);
+  color: #4a1f3b;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(212, 96, 142, 0.4);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.floating-login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 96, 142, 0.5);
+  background: linear-gradient(135deg, #ff9cb8, #ffcdd8);
+}
+
+.floating-login-btn.admin-mode {
+  background: linear-gradient(135deg, #22c55e, #4ade80);
+  color: white;
+}
+
+.floating-login-btn.admin-mode:hover {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+}
+
+/* ===== MODE INDICATOR ===== */
+.mode-indicator {
+  position: fixed;
+  top: 20px;
+  right: 140px;
+  z-index: 999;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.mode-indicator.view-mode {
+  background: rgba(255, 255, 255, 0.9);
+  color: #6a264a;
+  border: 1px solid rgba(255, 180, 210, 0.5);
+  box-shadow: 0 2px 10px rgba(255, 120, 170, 0.2);
+}
+
+.mode-indicator.admin-mode {
+  background: rgba(34, 197, 94, 0.9);
+  color: white;
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  box-shadow: 0 2px 10px rgba(34, 197, 94, 0.3);
+}
+
+/* ===== LOGIN MODAL ===== */
+.login-modal-content {
+  max-width: 400px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.login-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.login-error {
+  color: #e53e3e;
+  font-size: 13px;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* ===== VIEW MODE - HIDE EDIT ELEMENTS ===== */
+.view-mode .add-moment-btn,
+.view-mode .post-edit,
+.view-mode .post-delete,
+.view-mode .post-pin,
+.view-mode .mini-action,
+.view-mode #editorToolbar,
+.view-mode .create-footer {
+  display: none !important;
+}
+
+.view-mode #editor {
+  pointer-events: none;
+  background: #f8f8f8;
+  border-color: #e0e0e0;
+}
+
+.view-mode .create-panel {
+  display: none !important;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 700px) {
+  .floating-login-btn {
+    top: 10px;
+    right: 10px;
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+  
+  .mode-indicator {
+    top: 10px;
+    right: 120px;
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+}
+
+/* Extra small mobile support - 320px */
+@media (max-width: 480px) {
+  .wrapper {
+    padding: 16px 12px;
+    width: 98%;
+    gap: 16px;
+  }
+  
+  .top-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .title-group {
+    text-align: center;
+  }
+  
+  .title-group h2 {
+    font-size: 20px;
+  }
+  
+  .month-nav {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    align-items: center;
+  }
+  
+  .month-display {
+    order: -1;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: center;
+    width: 100%;
+  }
+  
+  button.nav-btn {
+    padding: 10px 20px;
+    font-size: 13px;
+    flex: 1;
+    max-width: 120px;
+    justify-content: center;
+    border-radius: 20px;
+  }
+  
+  .our-journey-btn {
+    margin-left: 0;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .calendar-grid {
+    column-gap: 3px;
+    row-gap: 3px;
+  }
+  
+  .day-card {
+    min-height: 50px;
+    padding: 4px 3px;
+    border-radius: 6px;
+  }
+  
+  .day-number {
+    font-size: 14px;
+  }
+  
+  .day-name {
+    font-size: 8px;
+  }
+  
+  .weekday {
+    font-size: 9px;
+    padding: 2px 3px;
+    text-align: center;
+  }
+  
+  .floating-login-btn {
+    top: 8px;
+    right: 8px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  .mode-indicator {
+    top: 8px;
+    right: 100px;
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+}
+
+/* Ultra small screens - 320px */
+@media (max-width: 360px) {
+  .wrapper {
+    padding: 12px 8px;
+  }
+  
+  .day-card {
+    min-height: 44px;
+    padding: 3px 2px;
+  }
+  
+  .day-number {
+    font-size: 12px;
+  }
+  
+  .weekday {
+    font-size: 8px;
+    padding: 1px 2px;
+  }
+  
+  .month-display {
+    font-size: 14px;
+  }
+  
+  button.nav-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+    min-width: 80px;
+  }
+}
+
+.journey-full-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.journey-item-full {
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow:
+    0 10px 22px rgba(210, 95, 145, 0.35),
+    0 0 0 1px rgba(255, 220, 240, 0.9);
+}
+
+.journey-item-full h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #6a264a;
+  margin-bottom: 8px;
+}
+
+.journey-item-full p {
+  font-size: 14px;
+  color: #5a2341;
+  line-height: 1.5;
+}

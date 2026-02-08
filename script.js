@@ -4,7 +4,7 @@ let isAdminMode = false;
 
 // ====== GOOGLE APPS SCRIPT CONFIGURATION ======
 // Replace this with your deployed GAS Web App URL
-const GAS_URL = "https://script.google.com/macros/s/AKfycby3cjolj5rzofy2oaicPT8544QHXF5cLziBH56sHLWulniJ3geGdtS4_pszdPVZ_DKy_Q/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxzwIavewVSHZAU18YYLxfZeapcAe3Cc8ehWaAFEgT5APu8wZ0UUQu5B9_I6LMhhCh7IA/exec";
 let isGASConnected = false; // Will be true if GAS is available
 
 // ====== GOOGLE APPS SCRIPT SYNC FUNCTIONS ======
@@ -43,13 +43,23 @@ async function checkGASConnection() {
 
 // Save post to GAS (no auth needed!)
 async function savePostToGAS(post) {
+  console.log("🔄 Saving post to GAS:", post.id || "new post");
+  
   if (!GAS_URL || GAS_URL.includes("YOUR_SCRIPT_ID")) {
+    console.log("⚠️ GAS URL not configured");
     return { status: "local", message: "GAS not configured" };
+  }
+
+  // Ensure post has an ID
+  if (!post.id) {
+    post.id = `${post.dateKey || selectedDateKey}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    console.log("🆔 Generated post ID:", post.id);
   }
 
   try {
     updateGASSyncStatus("uploading");
     
+    console.log("📤 Sending to GAS:", GAS_URL);
     const response = await fetch(GAS_URL, {
       method: "POST",
       mode: "cors",
@@ -62,16 +72,28 @@ async function savePostToGAS(post) {
       })
     });
 
-    // GAS returns JSON but we need to handle CORS
-    const result = await response.json().catch(() => ({ status: "ok" }));
+    console.log("📥 GAS response status:", response.status);
     
-    post.syncStatus = "synced";
-    post.syncedAt = new Date().toISOString();
-    updateGASSyncStatus("synced");
+    let result;
+    try {
+      result = await response.json();
+      console.log("✅ GAS response:", result);
+    } catch (e) {
+      console.log("⚠️ Could not parse JSON response, assuming success");
+      result = { status: "ok" };
+    }
     
-    return { status: "synced", result };
+    if (result.status === "ok" || result.status === "success" || response.ok) {
+      post.syncStatus = "synced";
+      post.syncedAt = new Date().toISOString();
+      updateGASSyncStatus("synced");
+      console.log("✅ Post synced successfully!");
+      return { status: "synced", result };
+    } else {
+      throw new Error(result.message || "Unknown error");
+    }
   } catch (error) {
-    console.error("GAS save error:", error);
+    console.error("❌ GAS save error:", error);
     post.syncStatus = "error";
     updateGASSyncStatus("error");
     
@@ -148,31 +170,43 @@ async function deletePostFromGAS(postId) {
 
 // Load all posts from GAS (public - no auth needed!)
 async function loadPostsFromGAS() {
+  console.log("🔄 Loading posts from GAS...");
+  
   if (!GAS_URL || GAS_URL.includes("YOUR_SCRIPT_ID")) {
-    console.log("GAS URL not configured, skipping cloud load");
+    console.log("⚠️ GAS URL not configured, skipping cloud load");
     return;
   }
 
   try {
-    console.log("Loading posts from GAS...");
     updateGASSyncStatus("uploading");
     
+    console.log("📥 Fetching from:", `${GAS_URL}?action=getPosts`);
     const response = await fetch(`${GAS_URL}?action=getPosts`, {
       method: "GET",
       mode: "cors"
     });
 
+    console.log("📥 Response status:", response.status);
+    
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
 
     const data = await response.json();
+    console.log("📥 GAS data received:", data);
     
-    if (data.status === "ok" && data.posts) {
+    if (data.status === "ok" && data.posts && Array.isArray(data.posts)) {
       const db = await dbPromise;
       let newPostsCount = 0;
       
+      console.log(`📊 Found ${data.posts.length} posts in GAS`);
+      
       for (const post of data.posts) {
+        if (!post.id) {
+          console.log("⚠️ Post without ID, skipping:", post);
+          continue;
+        }
+        
         // Check if we have this post locally
         const tx = db.transaction(POSTS_STORE, "readonly");
         const store = tx.objectStore(POSTS_STORE);
@@ -184,25 +218,33 @@ async function loadPostsFromGAS() {
         });
 
         // If post doesn't exist locally or GAS version is newer
-        if (!existingPost || (post.updatedAt && new Date(post.updatedAt) > new Date(existingPost.updatedAt || existingPost.createdAt))) {
+        const gasUpdated = post.updatedAt ? new Date(post.updatedAt) : new Date(0);
+        const localUpdated = existingPost?.updatedAt ? new Date(existingPost.updatedAt) : new Date(0);
+        
+        if (!existingPost || gasUpdated > localUpdated) {
           // Save to IndexedDB
           const writeTx = db.transaction(POSTS_STORE, "readwrite");
           const writeStore = writeTx.objectStore(POSTS_STORE);
           writeStore.put(post);
           newPostsCount++;
+          console.log("💾 Saved post to local DB:", post.id);
         }
       }
 
       if (newPostsCount > 0) {
-        console.log(`Loaded ${newPostsCount} new/updated posts from GAS`);
+        console.log(`✅ Loaded ${newPostsCount} new/updated posts from GAS`);
         renderCalendar(currentYear, currentMonth);
+      } else {
+        console.log("ℹ️ No new posts to load from GAS");
       }
       
       isGASConnected = true;
       updateGASSyncStatus("synced");
+    } else {
+      console.log("⚠️ No posts found in GAS or invalid response:", data);
     }
   } catch (error) {
-    console.error("Error loading from GAS:", error);
+    console.error("❌ Error loading from GAS:", error);
     isGASConnected = false;
     updateGASSyncStatus("local");
   }
@@ -303,10 +345,53 @@ window.addEventListener("load", () => {
   
   // Check GAS connection and load posts
   setTimeout(async () => {
+    console.log("🚀 Initializing GAS connection...");
+    console.log("🔗 GAS_URL:", GAS_URL);
     await checkGASConnection();
     await loadPostsFromGAS();
   }, 1000);
 });
+
+// Manual sync function for testing
+async function manualSyncToGAS() {
+  console.log("🧪 Manual sync triggered");
+  
+  if (!isAdminMode) {
+    alert("Please login as admin first");
+    return;
+  }
+  
+  // Get all local posts
+  const db = await dbPromise;
+  const tx = db.transaction(POSTS_STORE, "readonly");
+  const store = tx.objectStore(POSTS_STORE);
+  const allPosts = await new Promise((resolve) => {
+    const req = store.getAll();
+    req.onsuccess = () => resolve(req.result || []);
+  });
+  
+  console.log(`📊 Found ${allPosts.length} local posts to sync`);
+  
+  let successCount = 0;
+  let failCount = 0;
+  
+  for (const post of allPosts) {
+    try {
+      const result = await savePostToGAS(post);
+      if (result.status === "synced") {
+        successCount++;
+      } else {
+        failCount++;
+      }
+    } catch (err) {
+      console.error("Sync failed for post:", post.id, err);
+      failCount++;
+    }
+  }
+  
+  alert(`Sync complete!\n✅ Success: ${successCount}\n❌ Failed: ${failCount}`);
+  console.log(`✅ Sync complete: ${successCount} success, ${failCount} failed`);
+}
 
 // Process sync queue when coming online
 window.addEventListener("online", () => {
@@ -446,6 +531,17 @@ function showGASStatus() {
   const existingBtn = document.getElementById("driveConnectBtn");
   if (existingBtn) {
     existingBtn.remove();
+  }
+  
+  // Add manual sync button for admin testing
+  const topBar = document.querySelector(".top-bar");
+  if (topBar && isAdminMode && !document.getElementById("manualSyncBtn")) {
+    const syncBtn = document.createElement("button");
+    syncBtn.id = "manualSyncBtn";
+    syncBtn.textContent = "🔄 Force Sync";
+    syncBtn.style.cssText = "margin-left:10px;padding:6px 12px;background:linear-gradient(135deg,#ff7fa8,#ffb3c8);border:none;border-radius:20px;cursor:pointer;font-size:12px;color:#4a1f3b;font-weight:600;";
+    syncBtn.onclick = manualSyncToGAS;
+    topBar.appendChild(syncBtn);
   }
   
   // GAS is automatic - no user action needed
@@ -858,108 +954,11 @@ function setSyncStatus(text, type = "") {
 }
 
 // ====== QUEUE & SYNC TO GAS ======
-async function queueSync(post) {
-  const db = await dbPromise;
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(QUEUE_STORE, "readwrite");
-    const store = tx.objectStore(QUEUE_STORE);
-    store.put({ id: post.id, payload: post });
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-async function getAllQueued() {
-  const db = await dbPromise;
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(QUEUE_STORE, "readonly");
-    const store = tx.objectStore(QUEUE_STORE);
-    const req = store.getAll();
-    req.onsuccess = () => resolve(req.result || []);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function deleteQueued(id) {
-  const db = await dbPromise;
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(QUEUE_STORE, "readwrite");
-    const store = tx.objectStore(QUEUE_STORE);
-    store.delete(id);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-// low-level sender (tidak queue ulang)
-async function sendToGAS(post) {
-  if (!GAS_URL) return { status: "skip" };
-
-  const res = await fetch( GAS_URL, { mode: "no-cors", 
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(post)
-  });
-
-  const data = await res.json().catch(() => null) || {};
-  return data;
-}
-
-// dipanggil saat user Post / Repost
-async function syncPostToGAS(post) {
-  if (!syncStatusEl) initSyncStatus();
-
-  try {
-    setSyncStatus("Syncing…");
-    const data = await sendToGAS(post);
-
-    if (data.status === "ok" || data.result === "success") {
-      setSyncStatus("Synced ✓", "success");
-      return { status: "ok" };
-    } else {
-      // treat as failure
-      await queueSync(post);
-      setSyncStatus("Offline — queued 🔄", "error");
-      return { status: "queued" };
-    }
-  } catch (err) {
-    await queueSync(post);
-    setSyncStatus("Offline — queued 🔄", "error");
-    return { status: "queued", error: err };
-  }
-}
-
-// proses seluruh queue ketika online / saat load
-async function processSyncQueue() {
-  if (!navigator.onLine) return;
-  if (!syncStatusEl) initSyncStatus();
-
-  const queued = await getAllQueued();
-  if (!queued.length) return;
-
-  setSyncStatus("Syncing queued…");
-
-  for (const item of queued) {
-    try {
-      const res = await sendToGAS(item.payload);
-      if (res.status === "ok" || res.result === "success") {
-        await deleteQueued(item.id);
-      }
-    } catch (err) {
-      // kalau masih gagal, biarkan di queue
-    }
-  }
-
-  setSyncStatus("Synced ✓", "success");
-}
-
-// trigger saat online
-window.addEventListener("online", () => {
-  processSyncQueue();
-});
-
-// panggil juga sekali di awal
-processSyncQueue();
+// Using the GAS-specific functions defined at top of file
+// - queueForGASSync()
+// - processGASSyncQueue()
+// - savePostToGAS()
+// - updatePostInGAS()
 function escapeHtml(str) {
   return str
     .replace(/&/g, "&amp;")
@@ -1484,15 +1483,21 @@ postBtn.addEventListener("click", async () => {
   await savePosts();
 
   // SYNC TO GOOGLE APPS SCRIPT (automatic, no auth needed!)
+  console.log("🔄 Starting GAS sync...");
   if (editingIndex === null) {
     // New post - save to GAS
     const newPost = currentPosts[currentPosts.length - 1];
     newPost.dateKey = selectedDateKey;
-    await savePostToGAS(newPost);
+    console.log("🆕 Syncing new post to GAS:", newPost);
+    const result = await savePostToGAS(newPost);
+    console.log("🔄 GAS sync result:", result);
   } else {
     // Updated post - update in GAS
     const updatedPost = currentPosts[editingIndex];
-    await updatePostInGAS(updatedPost);
+    updatedPost.dateKey = selectedDateKey;
+    console.log("✏️ Syncing updated post to GAS:", updatedPost);
+    const result = await updatePostInGAS(updatedPost);
+    console.log("🔄 GAS sync result:", result);
   }
 
   // REFRESH KALENDAR SUPAYA ICON MOMEN MUNCUL REALTIME

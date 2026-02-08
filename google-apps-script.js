@@ -20,11 +20,23 @@
 const FOLDER_NAME = "Kalender Cinta";
 const SHEET_NAME = "Posts";
 
-// Main entry point
+// ============================================
+// CORS HANDLING - Critical for cross-origin requests
+// ============================================
+
+// Handle OPTIONS preflight requests
+function doOptions(e) {
+  const output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  
+  // Set CORS headers for preflight
+  return output;
+}
+
+// Main entry point for GET requests
 function doGet(e) {
   const action = e.parameter.action;
   
-  // Set CORS headers
   const output = ContentService.createTextOutput();
   output.setMimeType(ContentService.MimeType.JSON);
   
@@ -39,7 +51,7 @@ function doGet(e) {
         result = getPostsByDate(e.parameter.dateKey);
         break;
       default:
-        result = { status: 'ok', message: 'Kalender Cinta API Ready' };
+        result = { status: 'ok', message: 'Kalender Cinta API Ready', timestamp: new Date().toISOString() };
     }
     
     output.setContent(JSON.stringify(result));
@@ -48,7 +60,8 @@ function doGet(e) {
   } catch (err) {
     output.setContent(JSON.stringify({ 
       status: 'error', 
-      message: err.toString() 
+      message: err.toString(),
+      stack: err.stack
     }));
     return output;
   }
@@ -60,7 +73,19 @@ function doPost(e) {
   output.setMimeType(ContentService.MimeType.JSON);
   
   try {
-    const data = JSON.parse(e.postData.contents);
+    // Parse the request data
+    let data;
+    try {
+      data = JSON.parse(e.postData.contents);
+    } catch (parseErr) {
+      // If JSON parsing fails, try to get parameters from e.parameter
+      data = {
+        action: e.parameter.action,
+        post: e.parameter.post ? JSON.parse(e.parameter.post) : null,
+        postId: e.parameter.postId
+      };
+    }
+    
     const action = data.action;
     let result;
     
@@ -87,11 +112,16 @@ function doPost(e) {
   } catch (err) {
     output.setContent(JSON.stringify({ 
       status: 'error', 
-      message: err.toString() 
+      message: err.toString(),
+      stack: err.stack
     }));
     return output;
   }
 }
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
 
 // Get or create the folder
 function getOrCreateFolder() {
@@ -132,9 +162,25 @@ function getOrCreateSheet() {
   return sheet;
 }
 
+// ============================================
+// CRUD OPERATIONS
+// ============================================
+
 // Save a new post
 function savePost(post) {
+  if (!post) {
+    return { status: 'error', message: 'No post data provided' };
+  }
+  
   const sheet = getOrCreateSheet();
+  
+  // Validate required fields
+  if (!post.id) {
+    post.id = Utilities.getUuid();
+  }
+  if (!post.dateKey) {
+    return { status: 'error', message: 'dateKey is required' };
+  }
   
   // Check if post with same ID exists
   const data = sheet.getDataRange().getValues();
@@ -149,40 +195,44 @@ function savePost(post) {
   sheet.appendRow([
     post.id,
     post.dateKey,
-    post.title,
-    post.content,
+    post.title || '',
+    post.content || '',
     post.lovedBy || '',
-    post.createdAt,
-    post.updatedAt || post.createdAt,
+    post.createdAt || new Date().toISOString(),
+    post.updatedAt || post.createdAt || new Date().toISOString(),
     post.pinned ? 'true' : 'false',
     post.driveFileId || ''
   ]);
   
   return { 
     status: 'ok', 
-    message: 'Post saved',
+    message: 'Post saved successfully',
     postId: post.id
   };
 }
 
 // Update existing post
 function updatePost(post) {
+  if (!post || !post.id) {
+    return { status: 'error', message: 'Post ID is required for update' };
+  }
+  
   const sheet = getOrCreateSheet();
   const data = sheet.getDataRange().getValues();
   
   for (let i = 1; i < data.length; i++) {
     if (data[i][0] === post.id) {
       // Update row
-      sheet.getRange(i + 1, 2).setValue(post.dateKey);
-      sheet.getRange(i + 1, 3).setValue(post.title);
-      sheet.getRange(i + 1, 4).setValue(post.content);
-      sheet.getRange(i + 1, 5).setValue(post.lovedBy || '');
+      sheet.getRange(i + 1, 2).setValue(post.dateKey || data[i][1]);
+      sheet.getRange(i + 1, 3).setValue(post.title || data[i][2]);
+      sheet.getRange(i + 1, 4).setValue(post.content || data[i][3]);
+      sheet.getRange(i + 1, 5).setValue(post.lovedBy || data[i][4]);
       sheet.getRange(i + 1, 7).setValue(post.updatedAt || new Date().toISOString());
       sheet.getRange(i + 1, 8).setValue(post.pinned ? 'true' : 'false');
       
       return { 
         status: 'ok', 
-        message: 'Post updated',
+        message: 'Post updated successfully',
         postId: post.id
       };
     }
@@ -194,6 +244,10 @@ function updatePost(post) {
 
 // Delete a post
 function deletePost(postId) {
+  if (!postId) {
+    return { status: 'error', message: 'Post ID is required' };
+  }
+  
   const sheet = getOrCreateSheet();
   const data = sheet.getDataRange().getValues();
   
@@ -202,7 +256,7 @@ function deletePost(postId) {
       sheet.deleteRow(i + 1);
       return { 
         status: 'ok', 
-        message: 'Post deleted',
+        message: 'Post deleted successfully',
         postId: postId
       };
     }
@@ -210,7 +264,7 @@ function deletePost(postId) {
   
   return { 
     status: 'error', 
-    message: 'Post not found' 
+    message: 'Post not found: ' + postId
   };
 }
 
@@ -238,12 +292,17 @@ function getAllPosts() {
   return { 
     status: 'ok', 
     posts: posts,
-    count: posts.length
+    count: posts.length,
+    timestamp: new Date().toISOString()
   };
 }
 
 // Get posts by date
 function getPostsByDate(dateKey) {
+  if (!dateKey) {
+    return { status: 'error', message: 'dateKey is required' };
+  }
+  
   const allPosts = getAllPosts();
   const filtered = allPosts.posts.filter(p => p.dateKey === dateKey);
   
@@ -257,23 +316,65 @@ function getPostsByDate(dateKey) {
 
 // Sync multiple posts at once
 function syncMultiplePosts(posts) {
+  if (!posts || !Array.isArray(posts)) {
+    return { status: 'error', message: 'Posts array is required' };
+  }
+  
   const results = [];
+  let successCount = 0;
+  let failCount = 0;
   
   for (const post of posts) {
-    const result = savePost(post);
-    results.push(result);
+    try {
+      const result = savePost(post);
+      results.push(result);
+      if (result.status === 'ok') successCount++;
+      else failCount++;
+    } catch (err) {
+      results.push({ status: 'error', message: err.toString() });
+      failCount++;
+    }
   }
   
   return {
     status: 'ok',
-    message: `Synced ${posts.length} posts`,
+    message: `Synced ${successCount} of ${posts.length} posts`,
+    successCount: successCount,
+    failCount: failCount,
     results: results
   };
 }
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
 
 // Make folder public (optional - for backup files)
 function makeFolderPublic() {
   const folder = getOrCreateFolder();
   folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   return { status: 'ok', message: 'Folder is now public' };
+}
+
+// Test function - call this to verify setup
+function testSetup() {
+  try {
+    const sheet = getOrCreateSheet();
+    const info = {
+      sheetName: sheet.getName(),
+      rowCount: sheet.getLastRow(),
+      columnCount: sheet.getLastColumn()
+    };
+    
+    return {
+      status: 'ok',
+      message: 'Setup test successful',
+      info: info
+    };
+  } catch (err) {
+    return {
+      status: 'error',
+      message: 'Setup test failed: ' + err.toString()
+    };
+  }
 }

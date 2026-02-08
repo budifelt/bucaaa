@@ -1529,10 +1529,10 @@ button.nav-btn:active {
   }
   
   .month-nav {
-    flex-direction: column;
-    gap: 8px;
+    flex-direction: row;
+    justify-content: center;
+    gap: 10px;
     width: 100%;
-    align-items: center;
   }
   
   .month-display {
@@ -1541,13 +1541,13 @@ button.nav-btn:active {
     font-weight: 700;
     text-align: center;
     width: 100%;
+    margin-bottom: 4px;
   }
   
   button.nav-btn {
-    padding: 10px 20px;
-    font-size: 13px;
-    flex: 1;
-    max-width: 120px;
+    padding: 8px 16px;
+    font-size: 12px;
+    flex: 0 1 120px;
     justify-content: center;
     border-radius: 20px;
   }

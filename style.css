@@ -1657,6 +1657,60 @@ button.nav-btn:active {
   line-height: 1.5;
 }
 
+/* ===== GOOGLE DRIVE CONNECT BUTTON ===== */
+.drive-connect-btn {
+  position: fixed;
+  top: 20px;
+  right: 260px;
+  z-index: 999;
+  background: linear-gradient(135deg, #4285f4, #34a853);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(66, 133, 244, 0.4);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: slideInRight 0.5s ease;
+}
+
+.drive-connect-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.5);
+  background: linear-gradient(135deg, #5294f7, #45b563);
+}
+
+.drive-connect-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 700px) {
+  .drive-connect-btn {
+    top: 50px;
+    right: 10px;
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+}
+
 /* ===== GOOGLE DRIVE SYNC STYLES ===== */
 
 /* Google Sign-In Button */

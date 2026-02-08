@@ -161,10 +161,18 @@ body {
 }
 
 @media (max-width: 700px) {
-  .month-nav {
+  .top-bar {
     flex-direction: column;
-    gap: 8px;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .month-nav {
+    flex-direction: row;
+    justify-content: center;
+    gap: 12px;
     width: 100%;
+    order: 1;
   }
   
   .month-display {
@@ -173,12 +181,18 @@ body {
     font-weight: 700;
     text-align: center;
     width: 100%;
+    margin-bottom: 4px;
   }
   
   .month-nav button.nav-btn {
-    flex: 1;
-    max-width: 120px;
+    flex: 0 1 140px;
     justify-content: center;
+  }
+  
+  .our-journey-btn {
+    margin-left: 0;
+    width: 100%;
+    order: 2;
   }
 }
 

@@ -1656,3 +1656,276 @@ button.nav-btn:active {
   color: #5a2341;
   line-height: 1.5;
 }
+
+/* ===== GOOGLE DRIVE SYNC STYLES ===== */
+
+/* Google Sign-In Button */
+.g-signin-wrapper {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1001;
+}
+
+.g-signin-button {
+  background: #fff;
+  color: #757575;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+}
+
+.g-signin-button:hover {
+  background: #f8f9fa;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+.g-signin-button::before {
+  content: "🔐";
+  font-size: 16px;
+}
+
+.g-signin-wrapper.hidden {
+  display: none;
+}
+
+/* Drive Sync Status Indicator */
+.drive-sync-status {
+  position: fixed;
+  top: 20px;
+  left: 180px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 1px solid rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.drive-sync-status.uploading {
+  background: #fff3cd;
+  border-color: #ffc107;
+  color: #856404;
+}
+
+.drive-sync-status.synced {
+  background: #d4edda;
+  border-color: #28a745;
+  color: #155724;
+}
+
+.drive-sync-status.error {
+  background: #f8d7da;
+  border-color: #dc3545;
+  color: #721c24;
+}
+
+.drive-sync-status.hidden {
+  display: none;
+}
+
+/* Sync Status Badge in Modal */
+.sync-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0,0,0,0.1);
+  margin-right: 8px;
+}
+
+.sync-dot {
+  font-size: 8px;
+}
+
+.sync-status-badge.local .sync-dot {
+  color: #6c757d;
+}
+
+.sync-status-badge.uploading .sync-dot {
+  color: #ffc107;
+  animation: pulse 1s infinite;
+}
+
+.sync-status-badge.synced .sync-dot {
+  color: #28a745;
+}
+
+.sync-status-badge.error .sync-dot {
+  color: #dc3545;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Toast Notifications */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 300px;
+}
+
+.toast {
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  animation: slideIn 0.3s ease;
+  border-left: 4px solid;
+}
+
+.toast.success {
+  border-left-color: #28a745;
+  color: #155724;
+}
+
+.toast.uploading {
+  border-left-color: #ffc107;
+  color: #856404;
+}
+
+.toast.error {
+  border-left-color: #dc3545;
+  color: #721c24;
+}
+
+.toast.info {
+  border-left-color: #17a2b8;
+  color: #0c5460;
+}
+
+.toast-icon {
+  font-size: 18px;
+}
+
+.toast-message {
+  flex: 1;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+}
+
+.toast-close:hover {
+  opacity: 1;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.toast.hiding {
+  animation: slideOut 0.3s ease forwards;
+}
+
+/* Post Sync Badge */
+.post-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+.post-sync-badge.local {
+  background: #e9ecef;
+  color: #6c757d;
+}
+
+.post-sync-badge.synced {
+  background: #d4edda;
+  color: #155724;
+}
+
+.post-sync-badge.uploading {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.post-sync-badge.error {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Responsive for Google Drive elements */
+@media (max-width: 700px) {
+  .g-signin-wrapper {
+    top: 10px;
+    left: 10px;
+  }
+  
+  .g-signin-button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .drive-sync-status {
+    top: 50px;
+    left: 10px;
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+  
+  .toast-container {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    max-width: none;
+  }
+}

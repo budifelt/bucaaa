@@ -2,6 +2,565 @@
 const ADMIN_PASSWORD = "admin123"; // Can be changed later
 let isAdminMode = false;
 
+// ====== GOOGLE DRIVE SYNC CONFIGURATION ======
+const GOOGLE_CLIENT_ID = "128927562671-oggq3oq7kgvrqs7jj24a47r38co849bp.apps.googleusercontent.com"; // Your OAuth2 client ID
+const GOOGLE_API_KEY = "AIzaSyDfQaiM4n5dSSLREmVtciU8nmJHZX3ZYiY"; // Your API key (for public read)
+const DRIVE_FOLDER_NAME = "Kalender Cinta";
+let isGoogleSignedIn = false;
+let googleAccessToken = null;
+let driveFolderId = null;
+let isDriveFolderPublic = false; // Track if folder is publicly readable
+
+// Google Drive API scope
+const GOOGLE_SCOPES = "https://www.googleapis.com/auth/drive.file";
+
+// ====== GOOGLE DRIVE SYNC FUNCTIONS ======
+
+// Initialize Google Identity Services
+function initGoogleAuth() {
+  if (typeof google === "undefined") {
+    console.log("Google API not loaded yet");
+    setTimeout(initGoogleAuth, 1000);
+    return;
+  }
+
+  // Initialize token client
+  window.tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: GOOGLE_SCOPES,
+    callback: handleGoogleAuthResponse
+  });
+
+  // Check if already signed in (persistent across sessions)
+  const savedToken = localStorage.getItem("googleAccessToken");
+  
+  if (savedToken) {
+    googleAccessToken = savedToken;
+    isGoogleSignedIn = true;
+    findOrCreateDriveFolder();
+  } else if (GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.includes("YOUR_")) {
+    // Silent auto-sign in attempt (no UI shown)
+    console.log("Attempting silent Google sign-in...");
+    // Will trigger on first user interaction that requires sync
+  }
+
+  // Setup sign-in button (hidden, for manual trigger if needed)
+  const gSignInBtn = document.getElementById("gSignInButton");
+  if (gSignInBtn) {
+    gSignInBtn.addEventListener("click", () => {
+      if (isGoogleSignedIn) {
+        signOutFromGoogle();
+      } else {
+        requestGoogleAuth();
+      }
+    });
+  }
+}
+
+// Request Google authentication
+function requestGoogleAuth() {
+  if (window.tokenClient) {
+    window.tokenClient.requestAccessToken({ prompt: "consent" });
+  } else {
+    showToast("Google Sign-In not initialized", "error");
+  }
+}
+
+// Handle Google auth response
+function handleGoogleAuthResponse(tokenResponse) {
+  if (tokenResponse && tokenResponse.access_token) {
+    googleAccessToken = tokenResponse.access_token;
+    isGoogleSignedIn = true;
+    // Save to localStorage for persistence across sessions
+    localStorage.setItem("googleAccessToken", googleAccessToken);
+    
+    updateGoogleSignInUI();
+    // Silent success - no toast shown
+    
+    // Find or create the app folder
+    findOrCreateDriveFolder();
+  } else {
+    console.log("Google sign-in failed or cancelled");
+    // Silent fail - no error shown to user
+  }
+}
+
+// Sign out from Google (hidden function - no UI)
+function signOutFromGoogle() {
+  if (googleAccessToken) {
+    // Revoke token
+    google.accounts.oauth2.revoke(googleAccessToken, () => {
+      console.log("Token revoked");
+    });
+  }
+  
+  googleAccessToken = null;
+  isGoogleSignedIn = false;
+  driveFolderId = null;
+  // Remove from localStorage
+  localStorage.removeItem("googleAccessToken");
+  
+  updateGoogleSignInUI();
+  updateDriveSyncStatus("local");
+  // Silent sign out - no toast shown
+}
+
+// Update Google Sign-In UI (hidden - no visible button)
+function updateGoogleSignInUI() {
+  // Sign-in UI is hidden - only status indicators are shown
+  const gWrapper = document.getElementById("gSignInWrapper");
+  if (gWrapper) {
+    gWrapper.classList.add("hidden");
+  }
+}
+
+// Find or create Drive folder
+async function findOrCreateDriveFolder() {
+  if (!isGoogleSignedIn || !googleAccessToken) return;
+
+  try {
+    // Search for existing folder
+    const searchResponse = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false&spaces=drive`,
+      {
+        headers: {
+          Authorization: `Bearer ${googleAccessToken}`
+        }
+      }
+    );
+
+    const searchData = await searchResponse.json();
+    
+    if (searchData.files && searchData.files.length > 0) {
+      driveFolderId = searchData.files[0].id;
+      console.log("Found Drive folder:", driveFolderId);
+    } else {
+      // Create new folder
+      const createResponse = await fetch(
+        "https://www.googleapis.com/drive/v3/files",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${googleAccessToken}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            name: DRIVE_FOLDER_NAME,
+            mimeType: "application/vnd.google-apps.folder"
+          })
+        }
+      );
+
+      const createData = await createResponse.json();
+      driveFolderId = createData.id;
+      console.log("Created Drive folder:", driveFolderId);
+    }
+    
+    // Save folder ID to localStorage for public access
+    localStorage.setItem("driveFolderId", driveFolderId);
+    
+    // Make folder publicly readable
+    await makeFolderPublic(driveFolderId);
+    
+    updateDriveSyncStatus("synced");
+  } catch (error) {
+    console.error("Drive folder error:", error);
+    updateDriveSyncStatus("error");
+  }
+}
+
+// Upload post to Google Drive (silent background sync)
+async function uploadPostToDrive(post) {
+  if (!isGoogleSignedIn || !googleAccessToken || !driveFolderId) {
+    // Try to auto-sign in if not signed in
+    if (!isGoogleSignedIn && GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.includes("YOUR_")) {
+      // Trigger sign-in on first save attempt
+      requestGoogleAuth();
+      return { status: "pending", message: "Sign-in required" };
+    }
+    return { status: "local", message: "Not signed in to Google Drive" };
+  }
+
+  const fileName = `post_${post.dateKey}_${post.id}.json`;
+  const fileContent = JSON.stringify(post, null, 2);
+  const blob = new Blob([fileContent], { type: "application/json" });
+
+  try {
+    updateDriveSyncStatus("uploading");
+    // Silent - no toast shown
+
+    // Create multipart upload
+    const metadata = {
+      name: fileName,
+      parents: [driveFolderId],
+      mimeType: "application/json"
+    };
+
+    const form = new FormData();
+    form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+    form.append("file", blob);
+
+    const response = await fetch(
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${googleAccessToken}`
+        },
+        body: form
+      }
+    );
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log("Uploaded to Drive:", result.id);
+      
+      // Update post with Drive file ID
+      post.driveFileId = result.id;
+      post.syncStatus = "synced";
+      post.syncedAt = new Date().toISOString();
+      
+      updateDriveSyncStatus("synced");
+      // Silent success - no toast
+      
+      return { status: "synced", fileId: result.id };
+    } else {
+      throw new Error(`Upload failed: ${response.status}`);
+    }
+  } catch (error) {
+    console.error("Drive upload error:", error);
+    post.syncStatus = "error";
+    updateDriveSyncStatus("error");
+    // Silent error - no toast shown
+    
+    // Queue for retry
+    queueForSync(post);
+    
+    return { status: "error", error: error.message };
+  }
+}
+
+// Update existing file in Drive (silent background sync)
+async function updatePostInDrive(post) {
+  if (!isGoogleSignedIn || !googleAccessToken || !post.driveFileId) {
+    return uploadPostToDrive(post);
+  }
+
+  const fileContent = JSON.stringify(post, null, 2);
+  const blob = new Blob([fileContent], { type: "application/json" });
+
+  try {
+    updateDriveSyncStatus("uploading");
+    // Silent - no toast
+    
+    const response = await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files/${post.driveFileId}?uploadType=media`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${googleAccessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: blob
+      }
+    );
+
+    if (response.ok) {
+      post.syncStatus = "synced";
+      post.syncedAt = new Date().toISOString();
+      updateDriveSyncStatus("synced");
+      // Silent success
+      return { status: "synced" };
+    } else {
+      throw new Error(`Update failed: ${response.status}`);
+    }
+  } catch (error) {
+    console.error("Drive update error:", error);
+    post.syncStatus = "error";
+    updateDriveSyncStatus("error");
+    queueForSync(post);
+    return { status: "error" };
+  }
+}
+
+// Queue post for sync
+async function queueForSync(post) {
+  const db = await dbPromise;
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("syncQueue", "readwrite");
+    const store = tx.objectStore("syncQueue");
+    store.put({ id: post.id, post: post, timestamp: Date.now() });
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// Process sync queue
+async function processSyncQueue() {
+  if (!isGoogleSignedIn || !navigator.onLine) return;
+
+  const db = await dbPromise;
+  const tx = db.transaction("syncQueue", "readonly");
+  const store = tx.objectStore("syncQueue");
+  const request = store.getAll();
+
+  request.onsuccess = async () => {
+    const queue = request.result || [];
+    
+    for (const item of queue) {
+      try {
+        const result = await uploadPostToDrive(item.post);
+        if (result.status === "synced") {
+          // Remove from queue
+          const deleteTx = db.transaction("syncQueue", "readwrite");
+          const deleteStore = deleteTx.objectStore("syncQueue");
+          deleteStore.delete(item.id);
+        }
+      } catch (err) {
+        console.error("Sync queue error:", err);
+      }
+    }
+  };
+}
+
+// Update Drive sync status UI
+function updateDriveSyncStatus(status) {
+  const statusEl = document.getElementById("driveSyncStatus");
+  const iconEl = document.getElementById("driveSyncIcon");
+  const textEl = document.getElementById("driveSyncText");
+  const badgeEl = document.getElementById("syncStatusBadge");
+  const dotEl = document.getElementById("syncDot");
+  const text2El = document.getElementById("syncText");
+
+  if (!statusEl) return;
+
+  statusEl.classList.remove("hidden", "uploading", "synced", "error");
+  badgeEl?.classList.remove("local", "uploading", "synced", "error");
+
+  switch (status) {
+    case "uploading":
+      statusEl.classList.add("uploading");
+      if (iconEl) iconEl.textContent = "🔄";
+      if (textEl) textEl.textContent = "Uploading...";
+      badgeEl?.classList.add("uploading");
+      if (dotEl) dotEl.textContent = "●";
+      if (text2El) text2El.textContent = "Uploading";
+      break;
+    case "synced":
+      statusEl.classList.add("synced");
+      if (iconEl) iconEl.textContent = "✅";
+      if (textEl) textEl.textContent = "Synced to Drive";
+      badgeEl?.classList.add("synced");
+      if (dotEl) dotEl.textContent = "✓";
+      if (text2El) text2El.textContent = "Synced";
+      break;
+    case "error":
+      statusEl.classList.add("error");
+      if (iconEl) iconEl.textContent = "❌";
+      if (textEl) textEl.textContent = "Sync failed";
+      badgeEl?.classList.add("error");
+      if (dotEl) dotEl.textContent = "✗";
+      if (text2El) text2El.textContent = "Error";
+      break;
+    default: // local
+      statusEl.classList.add("hidden");
+      badgeEl?.classList.add("local");
+      if (dotEl) dotEl.textContent = "●";
+      if (text2El) text2El.textContent = "Local";
+  }
+}
+
+// Toast notification system
+function showToast(message, type = "info", duration = 3000) {
+  const container = document.getElementById("toastContainer");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  
+  const icons = {
+    success: "✅",
+    error: "❌",
+    uploading: "🔄",
+    info: "ℹ️"
+  };
+
+  toast.innerHTML = `
+    <span class="toast-icon">${icons[type] || "ℹ️"}</span>
+    <span class="toast-message">${message}</span>
+    <button class="toast-close">×</button>
+  `;
+
+  container.appendChild(toast);
+
+  // Close button
+  toast.querySelector(".toast-close").addEventListener("click", () => {
+    hideToast(toast);
+  });
+
+  // Auto hide
+  if (duration > 0) {
+    setTimeout(() => hideToast(toast), duration);
+  }
+
+  return toast;
+}
+
+function hideToast(toast) {
+  toast.classList.add("hiding");
+  setTimeout(() => toast.remove(), 300);
+}
+
+// Initialize Google auth when page loads
+window.addEventListener("load", () => {
+  // Initialize admin mode (login button, modal handlers)
+  initAdminMode();
+  
+  setTimeout(initGoogleAuth, 1000);
+  // Auto-load posts from Drive on startup (for public view)
+  // Try API key first (public access), then fallback to OAuth
+  setTimeout(() => loadPostsFromDrivePublic(), 2000);
+});
+
+// Process sync queue when coming online (silent)
+window.addEventListener("online", () => {
+  console.log("Back online - syncing to Drive...");
+  processSyncQueue();
+});
+
+// Load all posts from Google Drive using API key (public access - no sign-in needed)
+async function loadPostsFromDrivePublic() {
+  // First, we need to find the folder ID
+  // Try to get it from localStorage first (saved from previous admin session)
+  const savedFolderId = localStorage.getItem("driveFolderId");
+  
+  if (savedFolderId && GOOGLE_API_KEY && !GOOGLE_API_KEY.includes("YOUR_")) {
+    await loadFromFolder(savedFolderId);
+  } else if (isGoogleSignedIn && driveFolderId) {
+    // Fallback to OAuth if signed in
+    await loadFromFolder(driveFolderId);
+  } else {
+    console.log("No folder ID available - admin needs to sign in first to set up");
+  }
+}
+
+// Load posts from a specific folder
+async function loadFromFolder(folderId) {
+  if (!folderId) return;
+  
+  try {
+    console.log("Loading posts from Drive (public)...");
+    
+    // Use API key for public read access
+    const apiKeyParam = GOOGLE_API_KEY && !GOOGLE_API_KEY.includes("YOUR_") 
+      ? `&key=${GOOGLE_API_KEY}` 
+      : "";
+    
+    // List all files in the folder
+    const listUrl = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType='application/json'+and+trashed=false&fields=files(id,name,modifiedTime)${apiKeyParam}`;
+    
+    const response = await fetch(listUrl);
+    
+    if (!response.ok) {
+      // If API key fails, might need OAuth
+      console.log("Public read failed, may need authentication");
+      return;
+    }
+
+    const data = await response.json();
+    const files = data.files || [];
+    
+    console.log(`Found ${files.length} posts in Drive`);
+
+    // Download each file
+    const db = await dbPromise;
+    let newPostsCount = 0;
+    
+    for (const file of files) {
+      try {
+        // Check if we already have this post locally
+        const tx = db.transaction(POSTS_STORE, "readonly");
+        const store = tx.objectStore(POSTS_STORE);
+        const checkReq = store.get(file.id);
+        
+        const existingPost = await new Promise((resolve) => {
+          checkReq.onsuccess = () => resolve(checkReq.result);
+          checkReq.onerror = () => resolve(null);
+        });
+
+        // Download file content using API key
+        const downloadUrl = `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media${apiKeyParam}`;
+        const contentResponse = await fetch(downloadUrl);
+
+        if (!contentResponse.ok) continue;
+        
+        const post = await contentResponse.json();
+        
+        // Add Drive file ID if missing
+        if (!post.driveFileId) {
+          post.driveFileId = file.id;
+        }
+        
+        // If post doesn't exist locally or Drive version is newer
+        if (!existingPost || (file.modifiedTime && new Date(file.modifiedTime) > new Date(existingPost.updatedAt || existingPost.createdAt))) {
+          // Save to IndexedDB
+          const writeTx = db.transaction(POSTS_STORE, "readwrite");
+          const writeStore = writeTx.objectStore(POSTS_STORE);
+          writeStore.put(post);
+          newPostsCount++;
+        }
+      } catch (err) {
+        console.error(`Error loading file ${file.id}:`, err);
+      }
+    }
+
+    if (newPostsCount > 0) {
+      console.log(`Loaded ${newPostsCount} new/updated posts from Drive`);
+      // Refresh calendar to show new posts
+      renderCalendar(currentYear, currentMonth);
+    }
+  } catch (error) {
+    console.error("Error loading posts from Drive:", error);
+  }
+}
+
+// Make folder publicly readable (anyone with link can view)
+async function makeFolderPublic(folderId) {
+  if (!isGoogleSignedIn || !googleAccessToken || !folderId) return;
+  
+  try {
+    // Create permission for anyone to read
+    const response = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${folderId}/permissions`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${googleAccessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          role: "reader",
+          type: "anyone"
+        })
+      }
+    );
+    
+    if (response.ok) {
+      console.log("Folder is now publicly readable");
+      isDriveFolderPublic = true;
+    } else {
+      console.log("Could not make folder public - may already be public or permission denied");
+    }
+  } catch (error) {
+    console.error("Error making folder public:", error);
+  }
+}
+
+// Legacy function - kept for compatibility
+async function loadPostsFromDrive() {
+  await loadPostsFromDrivePublic();
+}
+
 // ====== ELEMENT REFERENSI KALENDER ======
 const monthDisplay = document.getElementById("monthDisplay");
 const calendarGrid = document.getElementById("calendarGrid");
@@ -1150,6 +1709,22 @@ postBtn.addEventListener("click", async () => {
 
   await savePosts();
 
+  // SYNC TO GOOGLE DRIVE
+  if (isGoogleSignedIn && editingIndex === null) {
+    // New post - upload to Drive
+    const newPost = currentPosts[currentPosts.length - 1];
+    newPost.dateKey = selectedDateKey;
+    await uploadPostToDrive(newPost);
+  } else if (isGoogleSignedIn && editingIndex !== null) {
+    // Updated post - update in Drive
+    const updatedPost = currentPosts[editingIndex];
+    if (updatedPost.driveFileId) {
+      await updatePostInDrive(updatedPost);
+    } else {
+      await uploadPostToDrive(updatedPost);
+    }
+  }
+
   // REFRESH KALENDAR SUPAYA ICON MOMEN MUNCUL REALTIME
   renderCalendar(currentYear, currentMonth);
   enterFeedMode();
@@ -1229,6 +1804,3 @@ if (closeOurJourneyModal) {
 // INITIAL RENDER
 renderCalendar(currentYear, currentMonth);
 startRomanticAnimations();
-
-// Initialize admin mode
-initAdminMode();
